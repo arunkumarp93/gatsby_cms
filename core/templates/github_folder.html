@@ -1,0 +1,19 @@
+{% extends 'base.html'%}
+
+{% block content %}
+    <form action="" method="post">
+      <label>
+        Enter Repo Name
+      </label>
+      {{form.repo}}
+      <label>
+        Enter Post Folder
+      </label>
+      {{form.posts_folder}}
+      <label>
+        Enter Draft Folder
+      </label>
+      {{form.drafts_folder}}
+      {{form.submit}}
+    </form>
+{% endblock %}

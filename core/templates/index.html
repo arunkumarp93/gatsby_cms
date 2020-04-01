@@ -1,0 +1,14 @@
+{% extends 'base.html'%}
+
+{% block content %}
+
+<div class="homecontainer">
+  {%for key, value in pages.items()%}
+    <h3>{{key}}</h3>
+    <h6>Category: {{value['category']}}</h6>
+    <a href="{{url_for('core.edit_page', path=value['path'])}}">Edit</a>
+    <a href="">Delete</a>
+    <hr>
+  {%endfor%}
+</div>
+{% endblock %}

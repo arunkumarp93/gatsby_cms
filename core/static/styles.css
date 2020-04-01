@@ -1,0 +1,89 @@
+/*  general*/
+body{
+  margin: 0
+}
+.flex-row{
+  display: flex;
+}
+/*  general*/
+
+/* header */
+.nav-container a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.nav-container{
+  display: grid ;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.box-2{
+  display: flex;
+  justify-content: end;
+}
+.box-1 a {
+    margin-right: 30px;
+}
+.main-menu li{
+  margin-right: 30px !important;
+}
+
+.nav-container{
+  background: blue;
+  padding: 30px;
+}
+
+/* header */
+
+/*  content */
+
+.content-container {
+    margin: 20px;
+    display: flex;
+    justify-content: center;
+}
+.homecontainer {
+    width: 100%;
+}
+
+.homecontainer hr {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+/* content */
+
+/* form */
+.buttons{
+  display: flex;
+  justify-content: center;
+}
+.buttons input{
+  padding: 20px;
+  text-align: center;
+  background: blue;
+  color: white;
+  font-size: 18px;
+  border: none;
+  margin-right: 20px;
+}
+form input {
+    padding: 15px;
+    margin-top: 20px;
+}
+.ql-toolbar {
+    margin: 0;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+}
+form * {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+/* form */

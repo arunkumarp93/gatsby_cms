@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+      <title>{% block title %}{% endblock %}</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="/static/styles.css">
+      <meta charset="utf-8">
+      {% block head %}
+		  {% endblock %}
+  </head>
+  <body>
+        <div class="nav-container">
+            <div class="box-1">
+              {% if is_autheticated%}
+                  <a href="/" id='homeurl'>Home</a>
+                  <a href="/drafts">Drafts</a>
+                  <a href="/create">Create New Blog</a>
+                  <a href="/configure">Configure Github Folders</a>
+               {%else%}
+               <div></div>
+               {% endif %}
+            </div>
+
+            <div class="box-2">
+              {% if is_autheticated%}
+                <a href="/logout">Logout</a>
+              {% else %}
+                <a href="/login">Login</a>
+              {%endif%}
+            </div>
+        </div>
+        <div class="error">
+          <h4>{{error}}</h4>
+        </div>
+        <div class="content-container">
+          {% if is_autheticated%}
+          {% block content %}{% endblock %}
+          {% block script %} {%endblock%}
+          {%else%}
+            <h3> Please login and <a href="/configure">configure github </a>repo details</h3>
+          {%endif%}
+        </div>
+        <script>
+
+          // const home_id = document.getElementById("homeurl")
+          // home_id.href = window.location.host
+        </script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{% extends 'base.html'%}
+
+{% block content %}
+  <form action="" method="post">
+    {{form.username}}
+    {{form.redirect}}
+    {{form.submit}}
+  </form>
+{% endblock %}
+
+{% block script%}
+   <script>
+     const redirect_url = {{redirect_to | tojson }}
+     const redirectId = document.getElementById('redirect')
+     if (redirect){
+       redirectId.value = redirect_url
+     }
+  </script>
+{%endblock%}
