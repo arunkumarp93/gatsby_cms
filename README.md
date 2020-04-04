@@ -12,12 +12,11 @@ We need github clien-id and client-secret to access the gihtub api for both deve
 So create oauth application in gihtub
 
 *step 1:*
-
 Goto --> https://github.com/settings/developers
 
 click on OAuth Apps --> New OAuth apps
 
-*step 2:*
+*step 2:* 
 
 Add Appname: sample app
 
