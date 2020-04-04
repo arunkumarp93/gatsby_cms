@@ -3,3 +3,5 @@ markdown2
 pygithub
 flask-wtf
 python-dotenv
+
+gunicorn
