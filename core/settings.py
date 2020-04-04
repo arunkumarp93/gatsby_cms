@@ -6,6 +6,7 @@ from core import views
 from core.utils import make_dir
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 app = Flask(__name__)
