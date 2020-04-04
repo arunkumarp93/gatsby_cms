@@ -42,6 +42,8 @@ you can see the client id and client secret. we need to add this to our .env
 
 *Step 1:* Clone the repo
 
+cd static_site_generator
+
 *Step 2:* create .env file in root folder
 
 Add below values to .env replace the GITHUB_CLIENTID and GITHUB_CLIENTSECRET with your application id and secret.
