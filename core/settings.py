@@ -18,7 +18,7 @@ class RegexConverter(BaseConverter):
 
 def create_app(config):
 
-    environment = os.getenv('ENV')
+    environment = os.getenv('ENV') if 'DYNO' in os.environ else os.environ.get('ENV')
     app.url_map.converters['regex'] = RegexConverter
 
     if environment:
