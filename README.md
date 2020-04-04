@@ -11,13 +11,13 @@ This will help you to create the markdown file for gatsby blog.
 We need github clien-id and client-secret to access the gihtub api for both development and production.
 So create oauth application in gihtub
 
-*step 1*
+*step 1:*
 
 Goto --> https://github.com/settings/developers
 
 click on OAuth Apps --> New OAuth apps
 
-*step 2*
+*step 2:*
 
 Add Appname: sample app
 
@@ -29,7 +29,7 @@ Authorization callback URL: http://localhost:5000/authorize
 
 click --> Register Application
 
-*step 3*
+*step 3:*
 
 click on app name that's created before in above case
 
@@ -111,6 +111,6 @@ https://devcenter.heroku.com/articles/heroku-cli
  *step 6:* heroku open
 
 
-issue:
+**issue:**
 
-githubfolder configre will be reset whenever server is restart or started newly
+***githubfolder configre will be reset whenever server is restart or started newly***
