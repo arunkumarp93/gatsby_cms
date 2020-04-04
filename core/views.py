@@ -39,7 +39,12 @@ blueprint= Blueprint('core', '__name__')
 #constant start
 github_identity_url =  'https://github.com/login/oauth/authorize'
 github_access_token_url = 'https://github.com/login/oauth/access_token'
-root_url = 'http://localhost:5000'
+
+if 'DYNO' in os.environ:
+    root_url = 'https://gatsby-ssg.herokuapp.com/'
+else:
+    root_url = 'http://localhost:5000'
+
 authorize_url = 'http://localhost:5000/authorize'
 #constant end
 
@@ -174,7 +179,6 @@ def index():
 
         return render_template('index.html', pages= display_pages)
     elif not auth:
-
         return render_template('index.html')
     else:
         return redirect(url_for('core.'+auth[1]))
@@ -457,7 +461,6 @@ def edit_page():
 
             elif not is_draft and folder_text:
                 #leave the flow and update the path
-                import pdb; pdb.set_trace()
                 path = folder_text
                 file = repo.get_contents('{}/index.md'.format(path))
                 # update the folder text to empty
