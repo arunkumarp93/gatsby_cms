@@ -5,7 +5,7 @@ Static site generator used to create the markdown content and store it on github
 
 This will help you to create the markdown file for gatsby blog.
 
-**Create OAUTH applications in github**
+**Create OAUTH application in github**
 ============================
 
 We need github clien-id and client-secret to access the gihtub api for both development and production.
