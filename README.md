@@ -47,10 +47,10 @@ you can see the client id and client secret. we need to add this to our .env
 
 Add below values to .env replace the GITHUB_CLIENTID and GITHUB_CLIENTSECRET with your application id and secret.
 
-SECRET_KEY = 'some-text-you-cannot-guess'
-GITHUB_CLIENTID = ''
-GITHUB_CLIENTSECRET = ''
-ENV='development'
+SECRET_KEY = 'some-text-you-cannot-guess'  
+GITHUB_CLIENTID = ''  
+GITHUB_CLIENTSECRET = ''  
+ENV='development'  
 
 *step-3:* install requirement
 pip install -r requirements.txt
