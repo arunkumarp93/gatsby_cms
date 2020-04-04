@@ -14,8 +14,7 @@ we need to configure the github repo and content folder path and draft folder pa
 
 We need github clien-id and client-secret to access the gihtub api
 
-Goto below url
-[]:https://github.com/settings/developers
+Goto --> https://github.com/settings/developers
 
 click on OAuth Apps --> New OAuth apps
 
