@@ -2,16 +2,17 @@
 {% block head %}
     <link rel="stylesheet" href="/static/hightlight/styles/default.css">
     <script src="/static/highlight/highlight.js"></script>
-    <script src="/static/turndown.js"></script>
+    <script src="/static/utils/turndown.js"></script>
     <link href="/static/quill/quill.snow.css" rel="stylesheet">
     <script src="/static/quill/quill.js"></script>
     <script src="/static/utils/image-resize.js"></script>
 {% endblock%}
 
 {% block content %}
-    <form action="" method="post" novalidate>
+    <form action="" id = "editform" method="post" novalidate>
           {%if description%}
           <input type="hidden" name="path" id='path' value={{path}}>
+          {{form.folder}}
           <label>
             Enter title
           </label>
@@ -39,88 +40,87 @@
 
 {% block script %}
 <script>
-var toolbarOptions = [
-    ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-    ['blockquote', 'code-block'],
-     ['link', 'image'],
+    var toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+        ['blockquote', 'code-block'],
+         ['link', 'image'],
 
-    [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-    [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-    [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-    [{ 'direction': 'rtl' }],                         // text direction
+        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+        [{ 'direction': 'rtl' }],                         // text direction
 
-    [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
 
-    [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-    [{ 'font': [] }],
-    [{ 'align': [] }],
+        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+        [{ 'font': [] }],
+        [{ 'align': [] }],
 
-    ['clean']                                         // remove formatting button
-];
+        ['clean']                                         // remove formatting button
+    ];
 
-let quill = new Quill('#editor', {
-  theme: 'snow',
-  modules: {
-    syntax: true,
-    toolbar:toolbarOptions,
-    imageResize: {
-       displaySize: true
-     }
-   },
-});
+    let quill = new Quill('#editor', {
+      theme: 'snow',
+      modules: {
+        syntax: true,
+        toolbar:toolbarOptions,
+        imageResize: {
+           displaySize: true
+         }
+       },
+    });
 
-const initial_description = {{ description | tojson}};
+    const initial_description = {{ description | tojson}};
 
-quill.clipboard.dangerouslyPasteHTML(initial_description + "\n");
+    quill.clipboard.dangerouslyPasteHTML(initial_description + "\n");
 
-const imageHandler = () => {
-  const input = document.createElement('input');
-  input.setAttribute('type', 'file');
-  input.setAttribute('accept', 'image/*');
-  input.click();
-  input.onchange = async () => {
- const file = input.files[0];
- const formData = new FormData();
+    const imageHandler = () => {
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
+      input.onchange = async () => {
+     const file = input.files[0];
+     const formData = new FormData();
 
-   formData.append('image', file);
+       formData.append('image', file);
 
-   // Save current cursor state
-   const range = quill.getSelection(true);
+       // Save current cursor state
+       const range = quill.getSelection(true);
 
-   // Insert temporary loading placeholder image
-   quill.insertEmbed(range.index, 'image', `${ window.location.origin }/images/loaders/placeholder.gif`);
+       // Insert temporary loading placeholder image
+       quill.insertEmbed(range.index, 'image', `${ window.location.origin }/images/loaders/placeholder.gif`);
 
-   // Move cursor to right side of image (easier to continue typing)
-   quill.setSelection(range.index + 1);
-
-
-   const res = await fetch('/uploads', {
-     method: 'POST',
-     body: formData
-   })
-   .then((response) => response.json())
-   .catch((error) =>{
-     return error
-   }); // API post, returns image location as string e.g. 'http://www.example.com/images/foo.png'
-
-   // Remove placeholder image
-   quill.deleteText(range.index, 1);
-
-   // Insert uploaded image
-   quill.insertEmbed(range.index, 'image', res.data);
-   }
-  }
-
-const toolbar = quill.getModule('toolbar')
-toolbar.addHandler('image', imageHandler)
+       // Move cursor to right side of image (easier to continue typing)
+       quill.setSelection(range.index + 1);
 
 
-  const submit_button = document.getElementById('submit')
-  let description = document.getElementById('description')
+       const res = await fetch('/uploads', {
+         method: 'POST',
+         body: formData
+       })
+       .then((response) => response.json())
+       .catch((error) =>{
+         return error
+       }); // API post, returns image location as string e.g. 'http://www.example.com/images/foo.png'
 
-  submit_button.onclick = function(e){
+       // Remove placeholder image
+       quill.deleteText(range.index, 1);
+
+       // Insert uploaded image
+       quill.insertEmbed(range.index, 'image', res.data);
+       }
+      }
+
+    const toolbar = quill.getModule('toolbar')
+    toolbar.addHandler('image', imageHandler)
+
+    document.getElementById('editform').addEventListener('submit', sendDescription)
+    let description = document.getElementById('description')
+
+    function sendDescription(){
     const description_data = quill.root.innerHTML
     description.value = description_data
     // html to markdown converter
@@ -176,7 +176,6 @@ toolbar.addHandler('image', imageHandler)
     const description_md = ts.turndown(description_data)
     description.value = description_md
   }
-
 
 </script>
 {% endblock %}

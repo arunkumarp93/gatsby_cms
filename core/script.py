@@ -35,6 +35,9 @@ def initialize():
         else:
             return False, 'configure_github_folders'
 
+def create_git_blob(repo, content, convert_type):
+    return repo.create_git_blob(content, convert_type)
+
 def upload_blob(repo, path, not_text=False):
     """
      repo : "pass the repo"
@@ -46,10 +49,10 @@ def upload_blob(repo, path, not_text=False):
     if not_text:
 
         data = base64.b64encode(open(path, "rb").read())
-        blob = repo.create_git_blob(data.decode("utf-8"), "base64")
+        blob = create_git_blob(repo, data.decode("utf-8"), "base64")
         return blob
 
-    blob = repo.create_git_blob(open(path, "r").read(), 'utf-8|base64')
+    blob =  create_git_blob(repo, open(path, "r").read(), 'utf-8|base64')
     return blob
 
 def upload_blobs(repo, file, path):

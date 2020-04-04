@@ -11,6 +11,26 @@ UPLOAD_FOLDER = os.getcwd() + '/temp'
 
 from core import settings
 
+def github_remove_images(remove_images, path, repo):
+    """
+       delete the image from the path.
+       remove_images (list): list of images to be removed
+       path (string): github path
+    """
+    if remove_images:
+        for image in remove_images:
+            try:
+                file = repo.get_contents('{}/{}'.format(path, image))
+                message = 'removed {}'.format(image)
+                repo.delete_file(path+'/'+image, message , file.sha)
+            except:
+                pass
+    return
+
+
+def get_content_type(path):
+    return path.split('/')[1]
+
 def get_app_config():
     return settings.app.config
 
@@ -43,7 +63,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def create_static_page(file_path, title, category, description, cover=' ' ):
+def create_static_page(file_path, title, category, description, folder='', cover=' ' ):
     """
     """
     f = open(file_path, 'w+')
@@ -52,6 +72,7 @@ def create_static_page(file_path, title, category, description, cover=' ' ):
     f.write('category: '+ category+'\n')
     f.write('cover: '+ cover +'\n')
     f.write('author: '+ 'arunkumar'+'\n')
+    f.write('folder:' + folder + '\n')
     f.write('---\n')
     f.write(description)
 

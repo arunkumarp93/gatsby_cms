@@ -6,5 +6,6 @@ class CreateForm(form):
     title = StringField('title', validators=[DataRequired()])
     category = StringField('category', validators=[DataRequired()])
     description=HiddenField("description")
+    folder = HiddenField('folder')
     publish = SubmitField('Publish')
     draft = SubmitField('Draft')

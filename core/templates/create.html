@@ -1,16 +1,16 @@
 {% extends 'base.html'%}
 
 {% block head %}
-<link rel="stylesheet" href="/static/hightlight/styles/default.css">
+<link rel="stylesheet" href="/static/highlight/styles/github.css">
 <script src="/static/highlight/highlight.js"></script>
-<script src="/static/turndown.js"></script>
+<script src="/static/utils/turndown.js"></script>
 <link href="/static/quill/quill.snow.css" rel="stylesheet">
 <script src="/static/quill/quill.js"></script>
 <script src="/static/utils/image-resize.js"></script>
 {% endblock%}
 
 {% block content %}
-    <form action="" method="post">
+    <form action="" id= 'createform' method="post">
       {%if error %}
          <h2 style="color:red">Reupload: <br/>{{status}}</h2>
       {% endif %}
@@ -68,7 +68,7 @@
        },
     });
 
-      const imageHandler = () => {
+    const imageHandler = () => {
         const input = document.createElement('input');
         input.setAttribute('type', 'file');
         input.setAttribute('accept', 'image/*');
@@ -107,66 +107,67 @@
     const toolbar = quill.getModule('toolbar')
     toolbar.addHandler('image', imageHandler)
 
+    let description = document.getElementById('description')
 
-      const submit_button = document.getElementById('submit')
-      let description = document.getElementById('description')
+    document.getElementById('createform').addEventListener('submit', sendDescription)
 
-      submit_button.onclick = function(e){
-        const description_data = quill.root.innerHTML
-        description.value = description_data
-        // html to markdown converter
-        const ts = new TurndownService()
-        ts.addRule('code', {
-        filter: ['pre'],
-        replacement: function (content) {
-          return '```\n' + content + '```'
-          }
-        })
-        ts.addRule('italicChange',{
-          filter: ['em'],
+    function sendDescription(){
+
+          const description_data = quill.root.innerHTML
+          description.value = description_data
+          // html to markdown converter
+          const ts = new TurndownService()
+          ts.addRule('code', {
+          filter: ['pre'],
           replacement: function (content) {
-            return '*' + content + '*'
-          }
-        })
-        ts.addRule('h1Change',{
-          filter: ['h1'],
-          replacement: function (content) {
-            return '#' + content
-          }
-        })
-        ts.addRule('h2Change',{
-            filter: ['h2'],
-            replacement: function (content) {
-              return '##' + content
+            return '```\n' + content + '```'
             }
-         })
-        ts.addRule('h3Change',{
-             filter: ['h3'],
-             replacement: function (content) {
-               return '###' + content
-             }
-        })
-        ts.addRule('h4Change',{
-             filter: ['h4'],
-             replacement: function (content) {
-               return '####' + content
-             }
-        })
-        ts.addRule('h5Change',{
-             filter: ['h5'],
-             replacement: function (content) {
-               return '#####' + content
-             }
-        })
-        ts.addRule('h6Change',{
-             filter: ['h6'],
-             replacement: function (content) {
-               return '######' + content
-             }
-        })
-        const description_md = ts.turndown(description_data)
-        description.value = description_md
-      }
+          })
+          ts.addRule('italicChange',{
+            filter: ['em'],
+            replacement: function (content) {
+              return '*' + content + '*'
+            }
+          })
+          ts.addRule('h1Change',{
+            filter: ['h1'],
+            replacement: function (content) {
+              return '#' + content
+            }
+          })
+          ts.addRule('h2Change',{
+              filter: ['h2'],
+              replacement: function (content) {
+                return '##' + content
+              }
+           })
+          ts.addRule('h3Change',{
+               filter: ['h3'],
+               replacement: function (content) {
+                 return '###' + content
+               }
+          })
+          ts.addRule('h4Change',{
+               filter: ['h4'],
+               replacement: function (content) {
+                 return '####' + content
+               }
+          })
+          ts.addRule('h5Change',{
+               filter: ['h5'],
+               replacement: function (content) {
+                 return '#####' + content
+               }
+          })
+          ts.addRule('h6Change',{
+               filter: ['h6'],
+               replacement: function (content) {
+                 return '######' + content
+               }
+          })
+          const description_md = ts.turndown(description_data)
+          description.value = description_md
+        }
 
 </script>
 {% endblock %}

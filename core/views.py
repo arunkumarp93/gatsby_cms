@@ -8,7 +8,6 @@ from urllib.parse import urlencode, parse_qs
 from functools import wraps
 from datetime import datetime
 
-
 import markdown2 as md2
 from  github import InputGitTreeElement
 from flask import (
@@ -28,11 +27,12 @@ from werkzeug.utils import secure_filename
 from core.forms import CreateForm, FolderForm
 from core.script import initialize, create_blobs, create_git_tree, \
                         create_git_commit, update_commit, upload_blob, get_contents, \
-                        get_content_from_folder, decode_content, update_file, create_element_tree
-from core.utils import allowed_file, create_static_page, move_images, clear_temp_static, \
-                        get_file_contents, get_article_data, read_blogs, read_file, UPLOAD_FOLDER\
+                        get_content_from_folder, decode_content, update_file, create_element_tree,\
+                        create_git_blob, create_input_git_tree
+from core.utils import allowed_file, create_static_page, move_images, clear_temp_static \
+                        ,get_file_contents, get_article_data, read_blogs, read_file, UPLOAD_FOLDER\
                         ,pages, make_dir, post_call, get_session_token, get_app_config, get_post_folder\
-                        ,get_draft_folder
+                        ,get_draft_folder, get_content_type,github_remove_images
 
 blueprint= Blueprint('core', '__name__')
 
@@ -41,8 +41,42 @@ github_identity_url =  'https://github.com/login/oauth/authorize'
 github_access_token_url = 'https://github.com/login/oauth/access_token'
 root_url = 'http://localhost:5000'
 authorize_url = 'http://localhost:5000/authorize'
-
 #constant end
+
+def github_upload_images(new_images, UPLOAD_FOLDER, path):
+    """
+     new_images(list): new images list to upload
+     UPLOAD_FOLDER(string): image path
+     path(string): github path to upload
+     repo(object): github repo object
+    """
+    # create new element list and update the folder with added image
+    if new_images:
+       auth = initialize()
+       if not auth[0]:
+           return
+
+       init = auth[1]
+       branch = init.get('branch')
+       master_ref = init.get('master_ref')
+       repo = init.get('repo')
+       tree = init.get('tree')
+       parent = repo.get_git_commit(branch.commit.sha)
+
+       #create blob for each image
+
+       blobs = create_blobs(UPLOAD_FOLDER, repo, upload_list=new_images)
+       #create element tree
+       element_tree = create_element_tree(blobs, path)
+       #create git tree
+       git_tree= create_git_tree(repo, element_tree, tree)
+       #update the head commit
+
+       git_commit = create_git_commit(repo, 'new image added to {}'.format(path), git_tree, parent)
+       update_commit(master_ref, git_commit.sha)
+
+    return
+
 def login_required(function=None, redirect_url=''):
     def actual_decorator(func):
         @wraps(func)
@@ -140,6 +174,7 @@ def index():
 
         return render_template('index.html', pages= display_pages)
     elif not auth:
+
         return render_template('index.html')
     else:
         return redirect(url_for('core.'+auth[1]))
@@ -196,6 +231,7 @@ def create():
         make_dir(dir_path)
         file_path = dir_path+'/'+'index.md'
         description = form.data['description']
+        draft = form.data['draft']
         images_path = re.findall('/temp/.*?\.[jpg|jpeg|png|gif]+', description)
 
         # TODO: remove the ne static path creation
@@ -224,7 +260,7 @@ def create():
             #create element list
             git_dir = dir_path.split('/')[-1]
 
-            posts_folder = get_post_folder()
+            posts_folder = get_post_folder(draft)
             if posts_folder:
                 git_path = '{}{}'.format(posts_folder, git_dir)
             else:
@@ -271,9 +307,7 @@ def edit_page():
                         markdown = md2.markdown(add_image_desc,  extras=['fenced-code-blocks'])
                         fix_front_quotes = re.sub('<blockquote>\n', '<blockquote>', markdown)
                         fixed_quotes = re.sub('\n</blockquote>\n','</blockquote>', fix_front_quotes)
-
                         description = re.sub('\n', '<br/>', fixed_quotes)
-                        print(description)
                     else:
                         file_path = os.path.join(UPLOAD_FOLDER+'/{}'.format(folder_path), file.name)
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -299,14 +333,17 @@ def edit_page():
             path = form.get('path')
             title_text = form.get('title')
             category_text = form.get('category')
-
+            folder_text = form.get('folder')
             file_path = path.split('/')[-1]
             #get file content
             description = form.get('description')
+            is_draft = form.get('draft')
+
 
             #find image
             current_image = re.findall('temp/.*?\.[jpg|jpeg|png|gif]+', description)
 
+            previous_image = new_images = remove_images = []
             if current_image:
                 try:
                     previous_image = os.listdir(UPLOAD_FOLDER+'/'+file_path)
@@ -315,27 +352,9 @@ def edit_page():
                 # go thorugh all the image take the list of added and removed images
                 new_images = [ image.split('/')[-1] for image in current_image if image.split('/')[-1] not in previous_image]
                 remove_images = [image for image in previous_image if 'temp/'+file_path+'/'+image not in current_image]
-                # delete the image from folder all removed image
-                if remove_images:
-                    for image in remove_images:
-                        try:
-                            file = repo.get_contents('{}/{}'.format(path, image))
-                            message = 'removed {}'.format(image)
-                            repo.delete_file(path+'/'+image, message , file.sha)
-                        except:
-                            pass
-                # create new element list and update the folder with added image
-                if new_images:
-                   #create blob for each image
-                   blobs = create_blobs(UPLOAD_FOLDER, repo, upload_list=new_images)
-                   #create element tree
-                   element_tree = create_element_tree(blobs, path)
-                   #create git tree
-                   git_tree= create_git_tree(repo, element_tree, tree)
-                   #update the head commit
-                   parent = repo.get_git_commit(branch.commit.sha)
-                   git_commit = create_git_commit(repo, 'new image added to {}'.format(path), git_tree, parent)
-                   update_commit(master_ref, git_commit.sha)
+
+            #get content current folder
+            content_folder = get_content_type(path)
 
             updated_image = re.sub('\(/temp|temp/[a-z0-9\-]+', '(.', description)
 
@@ -346,8 +365,9 @@ def edit_page():
             category = 'category: '+ category_text + '\n'
             cover  = 'cover: ' + ' ' +'\n'
             author = 'author: ' + 'arunkumar'+'\n'
+            folder = 'folder: ' + folder_text + '\n'
 
-            file_meta = '---\n' + title + category + cover + author + '---\n'
+            file_meta = '---\n' + title + category + cover + author + folder + '---\n'
 
             content = file_meta + updated_desc
 
@@ -355,8 +375,95 @@ def edit_page():
             current_time = datetime.now().strftime("%d-%b-%Y-%H:%M:%S")
             commit_message = 'Updated {} at {}'.format(file_path, current_time)
 
-            repo_contents = get_contents(repo, path)
-            file = repo.get_contents('{}/index.md'.format(path, ))
+            file = repo.get_contents('{}/index.md'.format(path))
+
+            """
+             find the content folder location and check for
+             saving type(draft or post)
+
+             if draft
+               i)  content_folder is draft leave to the flow
+               ii) contet_folder is post:
+                     update the folder meta_data for content
+                     and create new draft content
+             if post
+               i) content_folder is post leave the flow
+               ii) content_folder is draft:
+                   check file_meta_data folder
+                   folder is empty --> create new content
+                   folder is not empty --> update the path leave the flow
+            """
+            if is_draft and content_folder == 'drafts' or not is_draft and content_folder == 'posts':
+                #leave the flow
+                if current_image:
+                    github_remove_images(remove_images, path, repo)
+                    github_upload_images(new_images, UPLOAD_FOLDER, path, repo, tree, branch, master_ref)
+
+            elif is_draft and content_folder == 'posts':
+                #Update the folder path and create new draft content
+                content = re.sub('folder:', 'folder:{}'.format(path), content )
+                # create element tree
+                blob = create_git_blob(repo, content, 'utf-8|base64')
+
+                draft_folder = get_post_folder(draft)
+
+                git_dir = file_path
+
+                git_path = draft_folder+ git_dir
+
+                index_element = create_input_git_tree(git_path+'/index.md','100644', 'blob', blob.sha)
+
+                element_tree = [index_element]
+
+                # create git tree
+                git_tree= create_git_tree(repo, element_tree, tree)
+                #create git commit
+
+                parent = repo.get_git_commit(branch.commit.sha)
+
+                git_commit = create_git_commit(repo, 'new draft post added in {}'.format(git_dir), git_tree, parent)
+                #update the head commit
+                update_commit(master_ref, git_commit.sha)
+
+                github_upload_images(new_images, UPLOAD_FOLDER, git_path)
+
+                # upload current image
+                github_upload_images(previous_image, UPLOAD_FOLDER+'/'+file_path, git_path)
+                return redirect('/drafts')
+
+            elif not is_draft and not folder_text:
+                #create new post content
+                blob = create_git_blob(repo, content, 'utf-8|base64')
+                posts_folder = get_post_folder(is_draft)
+                git_dir = file_path
+                git_path = posts_folder+ git_dir
+
+                index_element = create_input_git_tree(git_path+'/index.md','100644', 'blob', blob.sha)
+
+                element_tree = [index_element]
+
+                # create git tree
+                git_tree= create_git_tree(repo, element_tree, tree)
+                #create git commit
+                parent = repo.get_git_commit(branch.commit.sha)
+                git_commit = create_git_commit(repo, 'new draft post added in {}'.format(git_dir), git_tree, parent)
+                #update the head commit
+                update_commit(master_ref, git_commit.sha)
+
+                github_upload_images(new_images, UPLOAD_FOLDER, path)
+                github_upload_images(previous_image, UPLOAD_FOLDER+'/'+file_path, git_path)
+
+                return redirect(root_url)
+
+            elif not is_draft and folder_text:
+                #leave the flow and update the path
+                import pdb; pdb.set_trace()
+                path = folder_text
+                file = repo.get_contents('{}/index.md'.format(path))
+                # update the folder text to empty
+                content = re.sub('folder: [a-z]+/[a-z]+/[a-zA-z0-9\-]+', 'folder:', content)
+                github_remove_images(remove_images, path, repo)
+                github_upload_images(new_images, UPLOAD_FOLDER, path)
 
             update_file(repo, path+'/index.md', commit_message, content, file.sha)
             clear_temp_static(True)
@@ -431,3 +538,8 @@ def uploaded_file(filename):
 @login_required
 def edit_file(filename, dir_path):
     return send_from_directory(UPLOAD_FOLDER+'/'+dir_path, filename)
+
+@blueprint.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(os.getcwd() , 'core/static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
