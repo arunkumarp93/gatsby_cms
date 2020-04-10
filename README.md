@@ -3,7 +3,7 @@
 
 Static site generator used to create the markdown content and store it on github.
 
-This will help you to create the markdown file for gatsby blog.
+This will help you to create the markdown file for gatsby blog. It'll help to create content and post immediatly or save it in draft, edit again and finally post it.
 
 **Create OAUTH application in github**
 ============================
@@ -16,7 +16,7 @@ Goto --> https://github.com/settings/developers
 
 click on OAuth Apps --> New OAuth apps
 
-*step 2:* 
+*step 2:*
 
 Add Appname: sample app
 

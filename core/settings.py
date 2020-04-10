@@ -26,10 +26,8 @@ def create_app(config):
     else:
         app.config.from_object(config.get('production'))
 
+    #create static and temporary folder
     folders = [app.config.get('STATIC'), app.config.get('UPLOAD_FOLDER')]
-
-    register_blueprints(app)
-
     UPLOAD_FOLDER = os.getcwd() + '/temp'
     pages = os.getcwd() + '/static'
 
@@ -37,6 +35,8 @@ def create_app(config):
 
     for folder in folders:
         make_dir(folder)
+
+    register_blueprints(app)
 
     return app
 

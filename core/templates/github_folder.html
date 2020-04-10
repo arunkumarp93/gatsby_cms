@@ -1,19 +1,32 @@
 {% extends 'base.html'%}
 
 {% block content %}
-    <form action="" method="post">
-      <label>
-        Enter Repo Name
-      </label>
-      {{form.repo}}
-      <label>
-        Enter Post Folder
-      </label>
-      {{form.posts_folder}}
-      <label>
-        Enter Draft Folder
-      </label>
-      {{form.drafts_folder}}
-      {{form.submit}}
-    </form>
+  <div class="github-config-container">
+      <div class="info">
+        <h4 class="warning"> Note: </h4>
+        <h2>Always enter the folder name with trailing slash </h2>
+        <h3>e.g., If folder post folder is conten/blog and draft folder is content/draft<h3>
+          <p>
+            <strong class="warning">/content/blog/</strong>
+
+          </p>
+          <strong class="warning">/content/draft/</strong>
+
+       </div>
+      <form action="" method="post">
+          <label>
+            Enter Repo Name
+          </label>
+          {{form.repo}}
+          <label>
+            Enter Post Folder
+          </label>
+          {{form.posts_folder}}
+          <label>
+            Enter Draft Folder
+          </label>
+          {{form.drafts_folder}}
+          {{form.submit}}
+      </form>
+  </div>
 {% endblock %}

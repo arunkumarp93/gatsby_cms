@@ -228,7 +228,7 @@ def create():
     # before starting remove the previous stuffs
     clear_temp_static()
     if form.validate_on_submit():
-        dir_1 = datetime.now().strftime("%m/%d/%Y")
+        dir_1 = datetime.now().strftime("%d-%b-%Y")
         dir_2 = form.data['title']
         dir_name = dir_1.replace('/', '-')+'--'+dir_2.replace(' ', '-')[:20]
         dir_path = pages+'/'+dir_name
@@ -318,12 +318,14 @@ def edit_page():
                         # file_path = os.path.join(UPLOAD_FOLDER, file.name)
                         with open(file_path, 'wb') as f:
                             f.write(decode_content(file.content))
+                import pdb; pdb.set_trace()
                 form = CreateForm(data=file_meta)
                 return render_template('edit.html', form=form, description=description, path=path)
             else:
                 return redirect(url_for('core.'+get_repo[1]))
         else:
             return render_template('edit.html', content=None)
+
     if request.method == 'POST':
         get_repo = initialize()
         if get_repo[0]:
@@ -338,6 +340,7 @@ def edit_page():
             title_text = form.get('title')
             category_text = form.get('category')
             folder_text = form.get('folder')
+            created_date = form.get('date')
             file_path = path.split('/')[-1]
             #get file content
             description = form.get('description')
@@ -365,18 +368,22 @@ def edit_page():
             # recheck the image added to temp folder
             updated_desc = re.sub('\(\(./', '(./', updated_image)
 
+            #update the file
+            current_time = datetime.now().strftime("%d-%b-%Y")
+
             title = 'title: ' + title_text + '\n'
             category = 'category: '+ category_text + '\n'
-            cover  = 'cover: ' + ' ' +'\n'
             author = 'author: ' + 'arunkumar'+'\n'
+            date = 'date: ' + '{}'.format(created_date)+ '\n'
+            updated = 'updated: ' + '{}'.format(current_time)+ '\n'
             folder = 'folder: ' + folder_text + '\n'
 
-            file_meta = '---\n' + title + category + cover + author + folder + '---\n'
+            import pdb; pdb.set_trace()
+
+            file_meta = '---\n' + title + category + author + date + updated + folder + '---\n'
 
             content = file_meta + updated_desc
 
-            #update the file
-            current_time = datetime.now().strftime("%d-%b-%Y-%H:%M:%S")
             commit_message = 'Updated {} at {}'.format(file_path, current_time)
 
             file = repo.get_contents('{}/index.md'.format(path))

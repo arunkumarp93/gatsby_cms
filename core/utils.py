@@ -2,6 +2,7 @@ import shutil
 import os
 import requests
 import json
+from datetime import datetime
 
 #constant start
 pages = os.getcwd() + '/static'
@@ -63,15 +64,16 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def create_static_page(file_path, title, category, description, folder='', cover=' ' ):
+def create_static_page(file_path, title, category, description, folder=''):
     """
     """
     f = open(file_path, 'w+')
     f.write('---\n')
     f.write('title: '+ title+'\n')
     f.write('category: '+ category+'\n')
-    f.write('cover: '+ cover +'\n')
+    f.write('date: '+ '{}'.format(datetime.now().strftime("%m/%d/%Y")) +'\n')
     f.write('author: '+ 'arunkumar'+'\n')
+    f.write('updated: '+ ' ' +'\n' )
     f.write('folder:' + folder + '\n')
     f.write('---\n')
     f.write(description)

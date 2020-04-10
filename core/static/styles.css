@@ -7,6 +7,26 @@ body{
 }
 /*  general*/
 
+/*github config css start*/
+.github-config-container{
+  display: flex;
+  flex-direction: column;
+}
+
+.github-config-container form{
+  width: 100%;
+  margin-top: 20px;
+}
+.warning{
+  color: red;
+}
+
+.info {
+    box-shadow: 5px 10px 20px green inset;
+    padding: 27px;
+}
+
+/*github config css end*/
 /* header */
 .nav-container a {
     color: white;
@@ -21,7 +41,7 @@ body{
 
 .box-2{
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;;
 }
 .box-1 a {
     margin-right: 30px;
