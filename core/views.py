@@ -318,7 +318,6 @@ def edit_page():
                         # file_path = os.path.join(UPLOAD_FOLDER, file.name)
                         with open(file_path, 'wb') as f:
                             f.write(decode_content(file.content))
-                import pdb; pdb.set_trace()
                 form = CreateForm(data=file_meta)
                 return render_template('edit.html', form=form, description=description, path=path)
             else:
@@ -377,8 +376,6 @@ def edit_page():
             date = 'date: ' + '{}'.format(created_date)+ '\n'
             updated = 'updated: ' + '{}'.format(current_time)+ '\n'
             folder = 'folder: ' + folder_text + '\n'
-
-            import pdb; pdb.set_trace()
 
             file_meta = '---\n' + title + category + author + date + updated + folder + '---\n'
 
