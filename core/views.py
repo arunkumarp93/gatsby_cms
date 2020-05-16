@@ -228,6 +228,7 @@ def create():
     # before starting remove the previous stuffs
     clear_temp_static()
     if form.validate_on_submit():
+        # breakpoint()
         dir_1 = datetime.now().strftime("%d-%b-%Y")
         dir_2 = form.data['title']
         dir_name = dir_1.replace('/', '-')+'--'+dir_2.replace(' ', '-')[:20]

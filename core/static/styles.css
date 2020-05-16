@@ -5,6 +5,10 @@ body{
 .flex-row{
   display: flex;
 }
+.flex-col{
+  display: flex;
+  flex-direction: column;
+}
 /*  general*/
 
 /*github config css start*/
@@ -99,7 +103,7 @@ form input {
 form {
   display: flex;
   flex-direction: column;
-  width: 50%;
+  width: 90%;
 }
 form * {
     margin-bottom: 20px;
@@ -107,3 +111,18 @@ form * {
 }
 
 /* form */
+
+/*show ls content*/
+.ls-content{
+  align-items: center;
+  text-align: center;
+
+}
+
+.postli {
+    display: flex;
+    justify-content: space-evenly;
+    margin-bottom: 10px;
+}
+
+/*show ls content end*/

@@ -115,3 +115,6 @@ https://devcenter.heroku.com/articles/heroku-cli
 **issue:**
 
 ***githubfolder configre will be reset whenever server is restart or started newly***
+
+1. Heroku github config in settings.py reset automatically without even resetting server.
+**workaround** while publish/draft storing form data to localstorage (it won't be disappear) and reterive again in (create/edit view) and save to github again.
