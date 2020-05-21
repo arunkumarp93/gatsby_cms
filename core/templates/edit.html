@@ -10,39 +10,140 @@
 {% endblock%}
 
 {% block content %}
-    <form action="" id = "editform" method="post" novalidate>
-          {%if description%}
-          <input type="hidden" name="path" id='path' value={{path}}>
-          {{form.folder}}
-          {{form.date}}
-          {{form.updated}}
-          <label>
-            Enter title
-          </label>
-            {{form.title}}
-                <br/>
-            <label>
-              Enter Category
-            </label>
-            {{form.category}}
-                <br/>
-            {{form.description}}
-            <label>Enter content</label>
-            <div id="editor"></div>
-            <div class="buttons">
-            {{form.publish}}
-            {{form.draft}}
-            </div>
-          {%else%}
-            <h3>No page to display</h3>
-          {%endif%}
+   <div class="flex-col">
+      <div class="ls-content">
+         <h4>
+           Localstorage Content
+         </h4>
+           <button type="button" name="button" id='clear_local'>Clear</button>
+         <ol id='posts'>
 
-    </form>
+         </ol>
+      </div>
+      <form action="" id = "editform" method="post" novalidate>
+            {%if description%}
+            <input type="hidden" name="path" id='path' value={{path}}>
+            {{form.folder}}
+            {{form.date}}
+            {{form.updated}}
+            <label>
+              Enter title
+            </label>
+              {{form.title}}
+                  <br/>
+              <label>
+                Enter Category
+              </label>
+              {{form.category}}
+                  <br/>
+              {{form.description}}
+              <label>Enter content</label>
+              <div id="editor"></div>
+              <div class="buttons">
+              {{form.publish}}
+              {{form.draft}}
+              </div>
+            {%else%}
+              <h3>No page to display</h3>
+            {%endif%}
+
+      </form>
+    </div>
 
 {% endblock %}
 
 {% block script %}
+
+<script type="module">
+  //This script need to be moved to common folder
+  import LocalStorage from '/static/utils/localstorage.js'
+  const store_access = new LocalStorage()
+
+  // get the data for form
+  form.addEventListener('submit', saveFormData)
+  document.getElementById('clear_local').addEventListener('click', clearLocalStorage)
+
+  let add_posts = document.getElementById('posts')
+
+  function createLiNode(text){
+    const liNode = document.createElement('li')
+    liNode.textContent = text
+    return liNode
+  }
+  function updatePosttoForm(){
+    //clear current form
+
+    form.reset()
+    //get value from localStorage
+    const key = this.parentNode.children[0].textContent
+    let data = LocalStorage.getData(key)
+    addToForm(data)
+  }
+  function addToForm(data){
+    const keys= Object.keys(data)
+    for (var key of keys){
+      if (key === 'description'){
+        quill.root.innerHTML = data[key]
+      }
+      document.getElementById(key).value = data[key]
+    }
+  }
+  function createButton(buttontext, id){
+    const button = document.createElement("button");
+    button.innerHTML = buttontext;
+    button.id = id
+    return button
+  }
+  function createLiDiv(){
+    const div = document.createElement('div');
+    div.className = 'postli'
+    return div
+  }
+  function saveFormData(){
+    /***
+     save data to LocalStorage and reterive later
+    ***/
+    const key = document.getElementById('title').value
+    const form_data = {
+      title: key,
+      category: document.getElementById('category').value,
+      description : quill.root.innerHTML,
+      path:document.getElementById('path').value,
+      folder:document.getElementById('folder').value,
+      date:document.getElementById('date').value,
+      updated:document.getElementById('updated').value
+    }
+    store_access.setData(key, form_data)
+  }
+  function clearLocalStorage(){
+    LocalStorage.clearAll()
+    add_posts.innerHTML = ''
+  }
+  function addPosts(posts){
+    add_posts.innerHTML = ''
+    for (let post in posts){
+        const li = createLiNode(posts[post])
+        li.id = post
+        const button = createButton('Add', post)
+        const node = createLiDiv()
+        node.appendChild(li)
+        node.appendChild(button)
+        add_posts.appendChild(node)
+    }
+  }
+  // get all contents from localStorage
+  const posts =  LocalStorage.getAllContents()
+  addPosts(posts)
+  const buttons = document.querySelectorAll('.postli button')
+
+  //apply onlclick to all button
+  for(let button of buttons){
+    button.addEventListener('click', updatePosttoForm)
+  }
+</script>
+
 <script>
+    var form  = document.getElementById('editform')
     var toolbarOptions = [
         ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
         ['blockquote', 'code-block'],
@@ -120,7 +221,7 @@
     const toolbar = quill.getModule('toolbar')
     toolbar.addHandler('image', imageHandler)
 
-    document.getElementById('editform').addEventListener('submit', sendDescription)
+    form.addEventListener('submit', sendDescription)
     let description = document.getElementById('description')
 
     function sendDescription(){

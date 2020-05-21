@@ -20,8 +20,7 @@
             <ol id='posts'>
 
             </ol>
-        </div>
-        <div>
+         </div>
           <form action="" id= 'createform' method="post">
             {%if error %}
                <h2 style="color:red">Reupload: <br/>{{status}}</h2>
@@ -65,7 +64,6 @@
     liNode.textContent = text
     return liNode
   }
-
   function updatePosttoForm(){
     //clear current form
 
@@ -75,7 +73,6 @@
     let data = LocalStorage.getData(key)
     addToForm(data)
   }
-
   function addToForm(data){
     const keys= Object.keys(data)
     debugger;
@@ -92,13 +89,11 @@
     button.id = id
     return button
   }
-
   function createLiDiv(){
     const div = document.createElement('div');
     div.className = 'postli'
     return div
   }
-
   function saveFormData(){
     /***
      save data to LocalStorage and reterive later
