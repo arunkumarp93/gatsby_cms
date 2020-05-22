@@ -305,14 +305,27 @@ def edit_page():
                 file_contents = get_contents(repo, path)
                 for file in file_contents:
                     if not allowed_file(file.path):
-                        text =  decode_content(file.content, True)
+
+                        # text =  decode_content(file.content, True)
+                        text = file.decoded_content
                         display_content = get_file_contents(text)
                         file_meta = get_article_data(display_content[0])
                         add_image_desc = re.sub('!\[\]\(.', '![](temp/{}'.format(folder_path), display_content[1])
+                        # TODO: fix it in proper way (workround found to remove the extra spaces)
+                        remove_extra_lines = add_image_desc.replace('\r\n\r\n  \r\n\r\n', '\r\n')\
+                                                        .replace('\r\n\r\n', '\r\n').replace('\r\n', '\n')
+
                         markdown = md2.markdown(add_image_desc,  extras=['fenced-code-blocks'])
                         fix_front_quotes = re.sub('<blockquote>\n', '<blockquote>', markdown)
                         fixed_quotes = re.sub('\n</blockquote>\n','</blockquote>', fix_front_quotes)
-                        description = re.sub('\n', '<br/>', fixed_quotes)
+                        breakpoint()
+                        description = re.sub('\n', '<br/>', \
+                                       fixed_quotes \
+                                       .replace('\n\n', '\n').replace('</li>\n', '</li>') \
+                                       .replace('\n<li>', '<li>').replace('<p><em>', '<em>') \
+                                       .replace('</em></p>', '</em>').replace('\n  \n', '')
+                                       )
+                        # breakpoint()
                     else:
                         file_path = os.path.join(UPLOAD_FOLDER+'/{}'.format(folder_path), file.name)
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)

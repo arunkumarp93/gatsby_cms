@@ -124,6 +124,8 @@ def clear_temp_static(temp=False):
 
 
 def get_file_contents(file):
+    if not isinstance(file, str):
+       file = file.decode('utf-8')
     contents = list(filter(None, file.split('---')))
     return contents
 
