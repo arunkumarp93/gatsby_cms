@@ -318,7 +318,7 @@ def edit_page():
                         markdown = md2.markdown(add_image_desc,  extras=['fenced-code-blocks'])
                         fix_front_quotes = re.sub('<blockquote>\n', '<blockquote>', markdown)
                         fixed_quotes = re.sub('\n</blockquote>\n','</blockquote>', fix_front_quotes)
-                        breakpoint()
+                        # breakpoint()
                         description = re.sub('\n', '<br/>', \
                                        fixed_quotes \
                                        .replace('\n\n', '\n').replace('</li>\n', '</li>') \
