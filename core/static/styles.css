@@ -126,3 +126,18 @@ form * {
 }
 
 /*show ls content end*/
+
+/*Quill js css start*/
+
+.sticky-toolbar {
+  position: fixed;
+  z-index: 100;
+  background: bisque !important;
+  width: 75%;
+  top: 0;
+}
+
+.ql-toolbar{
+    background: #ccc;
+}
+/*Quill js css end*/
