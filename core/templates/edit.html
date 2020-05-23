@@ -233,6 +233,7 @@
     ts.addRule('code', {
     filter: ['pre'],
     replacement: function (content) {
+      content = content.replace(/\\/g, '')
       return '```\n' + content + '```'
       }
     })

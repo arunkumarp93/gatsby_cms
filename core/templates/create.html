@@ -215,10 +215,15 @@
           const ts = new TurndownService()
           ts.addRule('code', {
           filter: ['pre'],
-          replacement: function (content) {
+          replacement: function (content, node, options) {
+            // need to fix this currently replace all backslash
+            // code block
+
+            content = content.replace(/\\/g, '')
             return '```\n' + content + '```'
-            }
+          }
           })
+
           ts.addRule('italicChange',{
             filter: ['em'],
             replacement: function (content) {
