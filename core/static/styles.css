@@ -141,3 +141,16 @@ form * {
     background: #ccc;
 }
 /*Quill js css end*/
+
+/*responsive fix start*/
+@media only screen and (max-width: 600px) {
+  .sticky-toolbar {
+     width: 80.5%;
+  }
+}
+@media only screen and (max-width: 1024px) {
+  .sticky-toolbar {
+     width: 85%;
+  }
+}
+/*responsive fix end*/
