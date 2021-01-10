@@ -196,26 +196,28 @@ def draft():
             folders = get_contents(repo, posts_folder)
         else:
             return redirect('/configure')
+        if folders:
+            contents = get_content_from_folder(repo, folders)
+            display_pages = {}
 
-        contents = get_content_from_folder(repo, folders)
-        display_pages = {}
+            for key, value in contents.items():
+                files = value['files']
+                for file in files:
+                    temp = {}
+                    if not allowed_file(file.path):
+                        text =  decode_content(file.content, True)
+                        display_content = get_file_contents(text)[0]
+                        temp = get_article_data(display_content)
 
-        for key, value in contents.items():
-            files = value['files']
-            for file in files:
-                temp = {}
-                if not allowed_file(file.path):
-                    text =  decode_content(file.content, True)
-                    display_content = get_file_contents(text)[0]
-                    temp = get_article_data(display_content)
+                        if temp.get('title'):
+                            temp['path'] = value['path']
+                            display_pages[temp['title']] = temp
+                        else:
+                            print (key, value)
 
-                    if temp.get('title'):
-                        temp['path'] = value['path']
-                        display_pages[temp['title']] = temp
-                    else:
-                        print (key, value)
-
-        return render_template('index.html', pages= display_pages)
+            return render_template('index.html', pages= display_pages)
+        else:
+            return render_template('index.html', pages={})
     elif not auth:
         return render_template('index.html')
     else:
