@@ -160,7 +160,6 @@ def get_contents(repo, path):
 
 def get_content_from_folder(repo, contents):
     result = {}
-    breakpoint()
     for content in contents:
         temp = {}
         if content.type == 'dir':
