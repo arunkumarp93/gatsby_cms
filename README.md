@@ -1,4 +1,4 @@
-**Static Site generator Using Flask and Github for gatsby**
+**Gatsby Static Site generator Using Flask and Github as storage**
 ========================================
 
 Static site generator used to create the markdown content and store it on github.
