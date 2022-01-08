@@ -11,13 +11,14 @@ load_dotenv()
 
 app = Flask(__name__)
 
+
 class RegexConverter(BaseConverter):
     def __init__(self, url_map, *items):
         super(RegexConverter, self).__init__(url_map)
         self.regex = items[0]
 
-def create_app(config):
 
+def create_app(config):
     environment = os.getenv('ENV') if 'DYNO' in os.environ else os.environ.get('ENV')
     app.url_map.converters['regex'] = RegexConverter
 
@@ -26,8 +27,8 @@ def create_app(config):
     else:
         app.config.from_object(config.get('production'))
 
-    #create static and temporary folder
-    folders = [app.config.get('STATIC'), app.config.get('UPLOAD_FOLDER')]
+    # create static and temporary folder
+    # folders = [app.config.get('STATIC'), app.config.get('UPLOAD_FOLDER')]
     UPLOAD_FOLDER = os.getcwd() + '/temp'
     pages = os.getcwd() + '/static'
 
@@ -39,6 +40,7 @@ def create_app(config):
     register_blueprints(app)
 
     return app
+
 
 def register_blueprints(app):
     app.register_blueprint(views.blueprint)

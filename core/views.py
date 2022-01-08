@@ -1,43 +1,36 @@
 import re
 import os
-import base64
-import string
-import random
 
 from urllib.parse import urlencode, parse_qs
 from functools import wraps
 from datetime import datetime
 
 import markdown2 as md2
-from  github import InputGitTreeElement
 from flask import (
-                    current_app,
-                    Blueprint,
-                    render_template,
-                    request,
-                    Response,
-                    jsonify,
-                    send_from_directory,
-                    redirect,
-                    url_for)
+    Blueprint,
+    render_template,
+    request,
+    jsonify,
+    send_from_directory,
+    redirect,
+    url_for)
 
 from werkzeug.utils import secure_filename
 
-
 from core.forms import CreateForm, FolderForm
 from core.script import initialize, create_blobs, create_git_tree, \
-                        create_git_commit, update_commit, upload_blob, get_contents, \
-                        get_content_from_folder, decode_content, update_file, create_element_tree,\
-                        create_git_blob, create_input_git_tree
-from core.utils import allowed_file, create_static_page, move_images, clear_temp_static \
-                        ,get_file_contents, get_article_data, read_blogs, read_file, UPLOAD_FOLDER\
-                        ,pages, make_dir, post_call, get_session_token, get_app_config, get_post_folder\
-                        ,get_draft_folder, get_content_type,github_remove_images
+    create_git_commit, update_commit, get_contents, \
+    get_content_from_folder, decode_content, update_file, create_element_tree, \
+    create_git_blob, create_input_git_tree
+from core.utils import allowed_file, create_static_page, move_images, clear_temp_static, \
+    get_file_contents, get_article_data, UPLOAD_FOLDER, \
+    PAGES, make_dir, post_call, get_session_token, get_app_config, get_post_folder, \
+    get_content_type, github_remove_images
 
-blueprint= Blueprint('core', '__name__')
+blueprint = Blueprint('core', '__name__')
 
-#constant start
-github_identity_url =  'https://github.com/login/oauth/authorize'
+# constant start
+github_identity_url = 'https://github.com/login/oauth/authorize'
 github_access_token_url = 'https://github.com/login/oauth/access_token'
 
 if 'DYNO' in os.environ:
@@ -46,41 +39,43 @@ else:
     root_url = 'http://localhost:5000'
 
 authorize_url = 'http://localhost:5000/authorize'
-#constant end
+# constant end
 
-def github_upload_images(new_images, UPLOAD_FOLDER, path):
+
+def github_upload_images(new_images, upload_folder, path):
     """
      new_images(list): new images list to upload
-     UPLOAD_FOLDER(string): image path
+     upload_folder(string): image path
      path(string): github path to upload
      repo(object): github repo object
     """
     # create new element list and update the folder with added image
     if new_images:
-       auth = initialize()
-       if not auth[0]:
-           return
+        auth = initialize()
+        if not auth[0]:
+            return
 
-       init = auth[1]
-       branch = init.get('branch')
-       master_ref = init.get('master_ref')
-       repo = init.get('repo')
-       tree = init.get('tree')
-       parent = repo.get_git_commit(branch.commit.sha)
+        init = auth[1]
+        branch = init.get('branch')
+        master_ref = init.get('master_ref')
+        repo = init.get('repo')
+        tree = init.get('tree')
+        parent = repo.get_git_commit(branch.commit.sha)
 
-       #create blob for each image
+        # create blob for each image
 
-       blobs = create_blobs(UPLOAD_FOLDER, repo, upload_list=new_images)
-       #create element tree
-       element_tree = create_element_tree(blobs, path)
-       #create git tree
-       git_tree= create_git_tree(repo, element_tree, tree)
-       #update the head commit
+        blobs = create_blobs(upload_folder, repo, upload_list=new_images)
+        # create element tree
+        element_tree = create_element_tree(blobs, path)
+        # create git tree
+        git_tree = create_git_tree(repo, element_tree, tree)
+        # update the head commit
 
-       git_commit = create_git_commit(repo, 'new image added to {}'.format(path), git_tree, parent)
-       update_commit(master_ref, git_commit.sha)
+        git_commit = create_git_commit(repo, 'new image added to {}'.format(path), git_tree, parent)
+        update_commit(master_ref, git_commit.sha)
 
     return
+
 
 def login_required(function=None, redirect_url=''):
     def actual_decorator(func):
@@ -95,42 +90,45 @@ def login_required(function=None, redirect_url=''):
                     return func(*args, **kwargs)
             else:
                 return redirect(url_for('core.login', redirect=redirect_url))
+
         return _wrapped_view
 
     if function:
         return actual_decorator(function)
     return actual_decorator
 
+
 @blueprint.context_processor
-def autheticate_check():
-    autheticated = get_session_token()
-    return dict(is_autheticated= True if autheticated else False)
+def authenticate_check():
+    authenticated = get_session_token()
+    return dict(is_autheticated=True if authenticated else False)
+
 
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login():
-
     client_id = os.getenv('GITHUB_CLIENTID')
-    params = {'client_id':client_id, 'scope':"user,repo"}
-    url = github_identity_url +'?' + urlencode(params)
+    params = {'client_id': client_id, 'scope': "user,repo"}
+    url = github_identity_url + '?' + urlencode(params)
     return redirect(url)
+
 
 @blueprint.route('/logout')
 def logout():
     config = get_app_config()
     config['GITHUB_ACCESSTOKEN'] = ''
+    config['IS_LOGOUT'] = True
     return redirect(root_url)
+
 
 @blueprint.route('/authorize', methods=['GET', 'POST'])
 def github_authorize():
-
     config = get_app_config()
     code = request.args.get('code')
     client_id = os.getenv('GITHUB_CLIENTID')
     client_secret = os.getenv('GITHUB_CLIENTSECRET')
-    data = {'client_id':client_id, 'client_secret':client_secret, 'code':code}
+    data = {'client_id': client_id, 'client_secret': client_secret, 'code': code}
 
-    github_auth = get_session_token()
-
+    # github_auth = get_session_token()
     response = post_call(github_access_token_url, data=data)
     reponse_data = parse_qs(response.content)
 
@@ -145,8 +143,12 @@ def github_authorize():
         else:
             return redirect('/configure')
 
+
 @blueprint.route('/', methods=['GET', 'POST'])
 def index():
+    """
+    Initialize the github folders.
+    """
     auth = initialize()
     if auth and auth[0]:
         init = auth[1]
@@ -167,7 +169,7 @@ def index():
             for file in files:
                 temp = {}
                 if not allowed_file(file.path):
-                    text =  decode_content(file.content, True)
+                    text = decode_content(file.content, True)
                     display_content = get_file_contents(text)[0]
                     temp = get_article_data(display_content)
 
@@ -175,13 +177,14 @@ def index():
                         temp['path'] = value['path']
                         display_pages[temp['title']] = temp
                     else:
-                        print (key, value)
+                        print(key, value)
 
-        return render_template('index.html', pages= display_pages)
+        return render_template('index.html', pages=display_pages)
     elif not auth:
         return render_template('index.html')
     else:
-        return redirect(url_for('core.'+auth[1]))
+        return redirect(url_for('core.' + auth[1]))
+
 
 @blueprint.route('/drafts', methods=['GET', 'POST'])
 def draft():
@@ -205,7 +208,7 @@ def draft():
                 for file in files:
                     temp = {}
                     if not allowed_file(file.path):
-                        text =  decode_content(file.content, True)
+                        text = decode_content(file.content, True)
                         display_content = get_file_contents(text)[0]
                         temp = get_article_data(display_content)
 
@@ -213,15 +216,16 @@ def draft():
                             temp['path'] = value['path']
                             display_pages[temp['title']] = temp
                         else:
-                            print (key, value)
+                            print(key, value)
 
-            return render_template('index.html', pages= display_pages)
+            return render_template('index.html', pages=display_pages)
         else:
             return render_template('index.html', pages={})
     elif not auth:
         return render_template('index.html')
     else:
-        return redirect(url_for('core.'+auth[1]))
+        return redirect(url_for('core.' + auth[1]))
+
 
 @blueprint.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -233,17 +237,17 @@ def create():
         # breakpoint()
         dir_1 = datetime.now().strftime("%d-%b-%Y")
         dir_2 = form.data['title']
-        dir_name = dir_1.replace('/', '-')+'--'+dir_2.replace(' ', '-')[:20]
-        dir_path = pages+'/'+dir_name
+        dir_name = dir_1.replace('/', '-') + '--' + dir_2.replace(' ', '-')[:20]
+        dir_path = PAGES + '/' + dir_name
         make_dir(dir_path)
-        file_path = dir_path+'/'+'index.md'
+        file_path = dir_path + '/' + 'index.md'
         description = form.data['description']
         draft = form.data['draft']
         images_path = re.findall('/temp/.*?\.[jpg|jpeg|png|gif]+', description)
 
         # TODO: remove the ne static path creation
 
-        #move images to particular folder
+        # move images to particular folder
         updated_description = re.sub('\(/temp/', '(./', description)
         create_static_page(file_path, dir_2, form.data['category'], updated_description)
         images_status = move_images(images_path, dir_path)
@@ -251,7 +255,7 @@ def create():
         if not images_status[0]:
             return render_template('create.html', form=form, error=True, status=images_status[1])
 
-        #Push to git rep
+        # Push to git rep
         get_repo = initialize()
 
         if get_repo[0]:
@@ -259,12 +263,12 @@ def create():
             repo = init.get('repo')
             branch = init.get('branch')
             tree = init.get('tree')
-            master_ref =init.get('master_ref')
+            master_ref = init.get('master_ref')
 
-            #created blob
+            # created blob
             blobs = create_blobs(dir_path, repo)
 
-            #create element list
+            # create element list
             git_dir = dir_path.split('/')[-1]
 
             posts_folder = get_post_folder(draft)
@@ -273,24 +277,25 @@ def create():
             else:
                 return redirect('/configure')
 
-            #create Element Tree
+            # create Element Tree
             element_tree = create_element_tree(blobs, git_path)
 
-            #create gittree
+            # create gittree
             if element_tree:
-                git_tree= create_git_tree(repo, element_tree, tree)
-                #create git commit
+                git_tree = create_git_tree(repo, element_tree, tree)
+                # create git commit
                 parent = repo.get_git_commit(branch.commit.sha)
                 git_commit = create_git_commit(repo, 'new post added in {}'.format(git_dir), git_tree, parent)
-                #update the head commit
+                # update the head commit
                 update_commit(master_ref, git_commit.sha)
 
-            #After the github upload remove the temp
+            # After the github upload remove the temp
             clear_temp_static(True)
             return redirect(root_url)
         else:
-            return redirect(url_for('core.'+get_repo[1]))
+            return redirect(url_for('core.' + get_repo[1]))
     return render_template('create.html', form=form)
+
 
 @blueprint.route('/editpage', methods=['GET', 'POST'])
 @login_required
@@ -298,7 +303,7 @@ def edit_page():
     if request.method == 'GET':
         clear_temp_static(True)
         path = request.args.get('path', None)
-        folder_path =  path.split('/')[-1]
+        folder_path = path.split('/')[-1]
         if path:
             get_repo = initialize()
             if get_repo[0]:
@@ -314,22 +319,22 @@ def edit_page():
                         file_meta = get_article_data(display_content[0])
                         add_image_desc = re.sub('!\[\]\(.', '![](temp/{}'.format(folder_path), display_content[1])
                         # TODO: fix it in proper way (workround found to remove the extra spaces)
-                        remove_extra_lines = add_image_desc.replace('\r\n\r\n  \r\n\r\n', '\r\n')\
-                                                        .replace('\r\n\r\n', '\r\n').replace('\r\n', '\n')
+                        remove_extra_lines = add_image_desc.replace('\r\n\r\n  \r\n\r\n', '\r\n') \
+                            .replace('\r\n\r\n', '\r\n').replace('\r\n', '\n')
 
-                        markdown = md2.markdown(add_image_desc,  extras=['fenced-code-blocks'])
+                        markdown = md2.markdown(add_image_desc, extras=['fenced-code-blocks'])
                         fix_front_quotes = re.sub('<blockquote>\n', '<blockquote>', markdown)
-                        fixed_quotes = re.sub('\n</blockquote>\n','</blockquote>', fix_front_quotes)
+                        fixed_quotes = re.sub('\n</blockquote>\n', '</blockquote>', fix_front_quotes)
                         # breakpoint()
                         description = re.sub('\n', '<br/>', \
-                                       fixed_quotes \
-                                       .replace('\n\n', '\n').replace('</li>\n', '</li>') \
-                                       .replace('\n<li>', '<li>').replace('<p><em>', '<em>') \
-                                       .replace('</em></p>', '</em>').replace('\n  \n', '')
-                                       )
+                                             fixed_quotes \
+                                             .replace('\n\n', '\n').replace('</li>\n', '</li>') \
+                                             .replace('\n<li>', '<li>').replace('<p><em>', '<em>') \
+                                             .replace('</em></p>', '</em>').replace('\n  \n', '')
+                                             )
                         # breakpoint()
                     else:
-                        file_path = os.path.join(UPLOAD_FOLDER+'/{}'.format(folder_path), file.name)
+                        file_path = os.path.join(UPLOAD_FOLDER + '/{}'.format(folder_path), file.name)
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
                         # file_path = os.path.join(UPLOAD_FOLDER, file.name)
                         with open(file_path, 'wb') as f:
@@ -337,7 +342,7 @@ def edit_page():
                 form = CreateForm(data=file_meta)
                 return render_template('edit.html', form=form, description=description, path=path)
             else:
-                return redirect(url_for('core.'+get_repo[1]))
+                return redirect(url_for('core.' + get_repo[1]))
         else:
             return render_template('edit.html', content=None)
 
@@ -345,11 +350,11 @@ def edit_page():
         # breakpoint()
         get_repo = initialize()
         if get_repo[0]:
-            init=get_repo[1]
+            init = get_repo[1]
             repo = init.get('repo')
             tree = init.get('tree')
             branch = init.get('branch')
-            master_ref =init.get('master_ref')
+            master_ref = init.get('master_ref')
 
             form = request.form
             path = form.get('path')
@@ -358,25 +363,26 @@ def edit_page():
             folder_text = form.get('folder')
             created_date = form.get('date')
             file_path = path.split('/')[-1]
-            #get file content
+            # get file content
             description = form.get('description')
             is_draft = form.get('draft')
 
-
-            #find image
+            # find image
             current_image = re.findall('temp/.*?\.[jpg|jpeg|png|gif]+', description)
 
             previous_image = new_images = remove_images = []
             if current_image:
                 try:
-                    previous_image = os.listdir(UPLOAD_FOLDER+'/'+file_path)
+                    previous_image = os.listdir(UPLOAD_FOLDER + '/' + file_path)
                 except:
                     previous_image = []
                 # go thorugh all the image take the list of added and removed images
-                new_images = [ image.split('/')[-1] for image in current_image if image.split('/')[-1] not in previous_image]
-                remove_images = [image for image in previous_image if 'temp/'+file_path+'/'+image not in current_image]
+                new_images = [image.split('/')[-1] for image in current_image if
+                              image.split('/')[-1] not in previous_image]
+                remove_images = [image for image in previous_image if
+                                 'temp/' + file_path + '/' + image not in current_image]
 
-            #get content current folder
+            # get content current folder
             content_folder = get_content_type(path)
 
             updated_image = re.sub('\(/temp|temp/[a-z0-9\-]+', '(.', description)
@@ -384,14 +390,14 @@ def edit_page():
             # recheck the image added to temp folder
             updated_desc = re.sub('\(\(./', '(./', updated_image)
 
-            #update the file
+            # update the file
             current_time = datetime.now().strftime("%d-%b-%Y")
 
             title = 'title: ' + title_text + '\n'
-            category = 'category: '+ category_text + '\n'
-            author = 'author: ' + 'arunkumar'+'\n'
-            date = 'date: ' + '{}'.format(created_date)+ '\n'
-            updated = 'updated: ' + '{}'.format(current_time)+ '\n'
+            category = 'category: ' + category_text + '\n'
+            author = 'author: ' + 'arunkumar' + '\n'
+            date = 'date: ' + '{}'.format(created_date) + '\n'
+            updated = 'updated: ' + '{}'.format(current_time) + '\n'
             folder = 'folder: ' + folder_text + '\n'
 
             file_meta = '---\n' + title + category + author + date + updated + folder + '---\n'
@@ -419,14 +425,14 @@ def edit_page():
                    folder is not empty --> update the path leave the flow
             """
             if is_draft and content_folder == 'drafts' or not is_draft and content_folder == 'posts':
-                #leave the flow
+                # leave the flow
                 if current_image:
                     github_remove_images(remove_images, path, repo)
                     github_upload_images(new_images, UPLOAD_FOLDER, path, repo, tree, branch, master_ref)
 
             elif is_draft and content_folder == 'posts':
-                #Update the folder path and create new draft content
-                content = re.sub('folder:', 'folder:{}'.format(path), content )
+                # Update the folder path and create new draft content
+                content = re.sub('folder:', 'folder:{}'.format(path), content)
                 # create element tree
                 blob = create_git_blob(repo, content, 'utf-8|base64')
 
@@ -434,54 +440,54 @@ def edit_page():
 
                 git_dir = file_path
 
-                git_path = draft_folder+ git_dir
+                git_path = draft_folder + git_dir
 
-                index_element = create_input_git_tree(git_path+'/index.md','100644', 'blob', blob.sha)
+                index_element = create_input_git_tree(git_path + '/index.md', '100644', 'blob', blob.sha)
 
                 element_tree = [index_element]
 
                 # create git tree
-                git_tree= create_git_tree(repo, element_tree, tree)
-                #create git commit
+                git_tree = create_git_tree(repo, element_tree, tree)
+                # create git commit
 
                 parent = repo.get_git_commit(branch.commit.sha)
 
                 git_commit = create_git_commit(repo, 'new draft post added in {}'.format(git_dir), git_tree, parent)
-                #update the head commit
+                # update the head commit
                 update_commit(master_ref, git_commit.sha)
 
                 github_upload_images(new_images, UPLOAD_FOLDER, git_path)
 
                 # upload current image
-                github_upload_images(previous_image, UPLOAD_FOLDER+'/'+file_path, git_path)
+                github_upload_images(previous_image, UPLOAD_FOLDER + '/' + file_path, git_path)
                 return redirect('/drafts')
 
             elif not is_draft and not folder_text:
-                #create new post content
+                # create new post content
                 blob = create_git_blob(repo, content, 'utf-8|base64')
                 posts_folder = get_post_folder(is_draft)
                 git_dir = file_path
-                git_path = posts_folder+ git_dir
+                git_path = posts_folder + git_dir
 
-                index_element = create_input_git_tree(git_path+'/index.md','100644', 'blob', blob.sha)
+                index_element = create_input_git_tree(git_path + '/index.md', '100644', 'blob', blob.sha)
 
                 element_tree = [index_element]
 
                 # create git tree
-                git_tree= create_git_tree(repo, element_tree, tree)
-                #create git commit
+                git_tree = create_git_tree(repo, element_tree, tree)
+                # create git commit
                 parent = repo.get_git_commit(branch.commit.sha)
                 git_commit = create_git_commit(repo, 'new draft post added in {}'.format(git_dir), git_tree, parent)
-                #update the head commit
+                # update the head commit
                 update_commit(master_ref, git_commit.sha)
 
                 github_upload_images(new_images, UPLOAD_FOLDER, path)
-                github_upload_images(previous_image, UPLOAD_FOLDER+'/'+file_path, git_path)
+                github_upload_images(previous_image, UPLOAD_FOLDER + '/' + file_path, git_path)
 
                 return redirect(root_url)
 
             elif not is_draft and folder_text:
-                #leave the flow and update the path
+                # leave the flow and update the path
                 path = folder_text
                 file = repo.get_contents('{}/index.md'.format(path))
                 # update the folder text to empty
@@ -489,12 +495,13 @@ def edit_page():
                 github_remove_images(remove_images, path, repo)
                 github_upload_images(new_images, UPLOAD_FOLDER, path)
 
-            update_file(repo, path+'/index.md', commit_message, content, file.sha)
+            update_file(repo, path + '/index.md', commit_message, content, file.sha)
             clear_temp_static(True)
             # TODO exception handling and send the form again with data
             return redirect(root_url)
         else:
-            return redirect(url_for('core.'+get_repo[1]))
+            return redirect(url_for('core.' + get_repo[1]))
+
 
 @blueprint.route('/configure', methods=['GET', 'POST'])
 @login_required
@@ -505,8 +512,8 @@ def configure_github_folders():
         data['repo'] = config['GITHUB_REPO']
         data['posts_folder'] = config['POSTS_FOLDER']
         data['drafts_folder'] = config['DRAFT_FOLDER']
-        form = FolderForm(data = data)
-        return render_template('github_folder.html', form = form)
+        form = FolderForm(data=data)
+        return render_template('github_folder.html', form=form)
     if request.method == 'POST':
         data = request.form
         repo = data.get('repo')
@@ -519,7 +526,8 @@ def configure_github_folders():
             config['DRAFT_FOLDER'] = draft
             return redirect('login')
         else:
-            return render_template('github_folder.html', context)
+            return render_template('github_folder.html')
+
 
 @blueprint.route('/uploads', methods=['POST'])
 @login_required
@@ -527,15 +535,16 @@ def save_image():
     if request.method == 'POST':
         file = request.files.get('image')
         if file and allowed_file(file.filename):
-             filename = file.filename
-             filename = secure_filename(filename)
-             if not os.path.exists(UPLOAD_FOLDER):
-                 os.makedirs(UPLOAD_FOLDER)
+            filename = file.filename
+            filename = secure_filename(filename)
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
 
-             file_path = os.path.join(UPLOAD_FOLDER, filename)
-             file.save(file_path)
-             return jsonify({'data':'/temp/'+filename})
-        return jsonify({'data':None})
+            file_path = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(file_path)
+            return jsonify({'data': '/temp/' + filename})
+        return jsonify({'data': None})
+
 
 @blueprint.route('/uploads/<regex("[a-z0-9\-]+"):dir_path>', methods=['POST'])
 @login_required
@@ -543,27 +552,30 @@ def edit_save_image(dir_path):
     if request.method == 'POST':
         file = request.files.get('image')
         if file and allowed_file(file.filename):
-             filename = file.filename
-             filename = secure_filename(filename)
-             if not os.path.exists(UPLOAD_FOLDER):
-                 os.makedirs(UPLOAD_FOLDER)
+            filename = file.filename
+            filename = secure_filename(filename)
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
 
-             file_path = os.path.join(UPLOAD_FOLDER+'/'+dir_path, filename)
-             file.save(file_path)
-             return jsonify({'data':'/temp/'+dir_path+'/'+filename})
-        return jsonify({'data':None})
+            file_path = os.path.join(UPLOAD_FOLDER + '/' + dir_path, filename)
+            file.save(file_path)
+            return jsonify({'data': '/temp/' + dir_path + '/' + filename})
+        return jsonify({'data': None})
+
 
 @blueprint.route('/temp/<filename>')
 @login_required
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
+
 @blueprint.route('/temp/<regex("[a-z0-9\-]+"):dir_path>/<filename>')
 @login_required
 def edit_file(filename, dir_path):
-    return send_from_directory(UPLOAD_FOLDER+'/'+dir_path, filename)
+    return send_from_directory(UPLOAD_FOLDER + '/' + dir_path, filename)
+
 
 @blueprint.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(os.getcwd() , 'core/static'),
+    return send_from_directory(os.path.join(os.getcwd(), 'core/static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')

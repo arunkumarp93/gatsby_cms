@@ -1,7 +1,7 @@
-Flask
-markdown2
-pygithub
+Flask~=2.0.2
+markdown2~=2.4.2
+pygithub~=1.55
 flask-wtf
-python-dotenv
-
+python-dotenv~=0.19.2
 gunicorn
+WTForms~=3.0.0
