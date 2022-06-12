@@ -23,7 +23,6 @@ def initialize():
     Not there then return False
 
     """
-    breakpoint()
     local_data = read_local_storage()
     config = settings.app.config
     token = config.get('GITHUB_ACCESSTOKEN')
